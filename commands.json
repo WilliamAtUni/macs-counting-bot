@@ -1,0 +1,15 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Romejanic/slasher/master/schema.json",
+
+    "help": {
+        "description": "Displays a list of commands that can be used"
+    },
+
+    "start": {
+        "description": "Create a new thread and start the counter at zero"
+    },
+
+    "stop": {
+        "description": "Stop the counter and delete the channel"
+    }
+}
