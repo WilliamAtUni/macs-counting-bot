@@ -10,6 +10,20 @@
     },
 
     "stop": {
-        "description": "Stop the counter and delete the channel"
+        "description": "Stop the counter and delete the channel",
+        "permissions": {
+            "requires": [
+                "MANAGE_CHANNELS"
+            ]
+        }
+    },
+
+    "clean": {
+        "description": "Cleans the channels",
+        "permissions": {
+            "requires": [
+                "MANAGE_CHANNELS"
+            ]
+        }
     }
 }

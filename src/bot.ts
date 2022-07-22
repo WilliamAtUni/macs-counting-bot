@@ -1,5 +1,5 @@
 import { Console, debug } from "console";
-import { Client, Collector, DataResolver, Emoji, Guild, GuildInviteManager, HexColorString, Intents, Message, MessageActionRow, MessageButton, MessageEmbed, MessageManager, MessagePayload, Modal, ModalActionRowComponent, RoleManager, Snowflake, TextInputComponent, User } from "discord.js";
+import { Client, Collector, DataResolver, Emoji, Guild, GuildInviteManager, HexColorString, Intents, Message, MessageActionRow, MessageButton, MessageEmbed, MessageManager, MessagePayload, MessageSelectMenu, Modal, ModalActionRowComponent, RoleManager, Snowflake, TextInputComponent, User } from "discord.js";
 import { CommandContext, SlasherClient } from "discord.js-slasher";
 // const dotenv = require('dotenv');
 import * as dotenv from 'dotenv';
@@ -22,6 +22,7 @@ enum Commands {
 
 let countingChannelId = "";
 let lastMessageAuthorId = "";
+let record = 1;
 let counter = 1;
 
 const client = new SlasherClient({
@@ -47,7 +48,20 @@ client.on("command", async (context) => {
     // first, get the channel
     let Channel = context.channel;
 
-    if (context.name === "start") {
+    if (context.name === "help") {
+        context.reply({embeds: [
+            new MessageEmbed()
+    .setTitle("Help with roles!")
+    .setDescription("A listing of commands that you can use")
+    .setColor('#FFBCB5')
+    .addFields(
+        { name: "`/help`", value: "Shows this message" },
+        { name: "`/start`", value: "Creates a new channel and sets the counter to 1"},
+    )
+        ]})
+    }
+
+    else if (context.name === "start") {
         { // threads to be implemented soon
             /*
         if (Channel.type !== "GUILD_TEXT") {
@@ -69,6 +83,11 @@ client.on("command", async (context) => {
         */
         }
 
+        // if a channel already exists, delete it
+        if (countingChannelId !== "") {
+            await context.server.guild.channels.delete(countingChannelId);
+        }
+
         // create a new channel
         // first, get the channel list
         let ChannelManager = context.server.guild.channels;
@@ -87,14 +106,28 @@ client.on("command", async (context) => {
         If you do not continue the count for any reason, you will be removed from the channel.\n
         Happy counting! :blush:
         `)
+
+        await context.reply({ embeds: [
+            new MessageEmbed()
+            .setTitle("Counting Channel created.")
+        ]}, true);
     }
 
-    if (context.name === "stop") {
+    else if (context.name === "stop") {
         // check if the user is not an exec
-        let user = await context.server.guild.members.fetch(context.user.id);
-        let roles = context.server.guild.roles;
-        let hasExecRole = roles.cache.some(role => role.name === "Executive");
-        if (!hasExecRole) {
+        // let user = await context.server.guild.members.fetch(context.user.id);
+        // let roles = context.server.guild.roles;
+        // let hasExecRole = roles.cache.some(role => role.name === "Executive");
+        // if (!hasExecRole) {
+        //     return;
+        // }
+
+        // if there is no channel, do not do anything
+        if (countingChannelId === "") {
+            context.reply({embeds: [
+                new MessageEmbed()
+                .setTitle("Unable to delete channel. No counting channel exists.")
+            ]}, true);
             return;
         }
 
@@ -107,6 +140,28 @@ client.on("command", async (context) => {
             new MessageEmbed()
             .setTitle("Counting channel has been deleted.")
         ]}, true)
+
+        countingChannelId = "";
+    }
+
+    else if (context.name === "clean") {
+        
+        console.log("Cleaning channels...");
+        // debugger;
+        // clean the counting channels
+        let ChannelManager = context.server.guild.channels;
+        let countingChannels = ChannelManager.cache.filter(channel => channel.name === "counting");
+
+        for (let [countingChannelID, channel] of countingChannels) {
+            console.log("Deleting channel: "+countingChannelID);
+            await ChannelManager.delete(countingChannelID).catch(
+                (err) => {console.log(err);
+                }
+            );
+            console.log("Channel deleted.");
+        }
+
+        console.log("Channels gone!");
     }
 });
 
@@ -149,8 +204,27 @@ client.on("messageCreate", async (message) => {
         let permissions = channel.permissionOverwrites;
         
         // debugger;
-
+        
         await message.react("❌");
+
+        if (counter > record) {
+            counter--;
+            record = counter;
+            console.log("New record: "+record);
+            // send a message congratulating the user on surpassing the record
+            await message.channel.send({
+                embeds: [
+                    new MessageEmbed()
+                    .setTitle("New record! `"+record+"`")
+                    .setAuthor({
+                        name: message.author.username
+                    })
+                    .setDescription(`Congratulations, you surpassed the record!`)
+                    .addField("However", "because you failed to continue the count, you will be removed from the channel.")
+                    .setColor(user.displayHexColor)
+                ]
+            })
+        }
         
         await message.channel.send({embeds: [
             new MessageEmbed()
@@ -172,6 +246,7 @@ client.on("messageCreate", async (message) => {
         });
 
         counter = 1;
+        console.log("The counter has been reset to "+counter);
 
         return;
     }
