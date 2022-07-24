@@ -6,7 +6,12 @@
     },
 
     "start": {
-        "description": "Create a new thread and start the counter at zero"
+        "description": "Create a new thread and start the counter at zero",
+        "permissions": {
+            "requires": [
+                "MANAGE_CHANNELS"
+            ]
+        }
     },
 
     "stop": {

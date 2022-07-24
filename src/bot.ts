@@ -1,19 +1,9 @@
-import { Console, debug } from "console";
 import { Client, Collector, DataResolver, Emoji, Guild, GuildInviteManager, HexColorString, Intents, Message, MessageActionRow, MessageButton, MessageEmbed, MessageManager, MessagePayload, MessageSelectMenu, Modal, ModalActionRowComponent, RoleManager, Snowflake, TextInputComponent, User } from "discord.js";
 import { CommandContext, SlasherClient } from "discord.js-slasher";
 // const dotenv = require('dotenv');
 import * as dotenv from 'dotenv';
 dotenv.config();
-// import * as embeds from "./embeds";
-// import { pool, clientMigrationConfig, toDB } from "./db";
 import fs from "fs";
-import path from 'path';
-import pg from 'node-postgres';
-import { migrate } from 'postgres-migrations';
-import { Channel, channel } from "diagnostics_channel";
-// import * as structures from "./dbstructures";
-
-// const dbpool = pool;
 
 enum Commands {
     Help = "help",
@@ -24,6 +14,13 @@ let countingChannelId = "";
 let lastMessageAuthorId = "";
 let record = 1;
 let counter = 1;
+
+let data = {
+    "countingChannelId": countingChannelId,
+    "lastMessageAuthorId": lastMessageAuthorId,
+    "record": record,
+    "counter": counter
+}
 
 const client = new SlasherClient({
     intents: [
@@ -40,7 +37,14 @@ const client = new SlasherClient({
 
 client.once("ready", async (ready) => {
     console.log(`${client.user.tag} is ready`);
+    data = JSON.parse(fs.readFileSync("data.json", "utf8"));
+
+    countingChannelId = data.countingChannelId;
+    lastMessageAuthorId = data.lastMessageAuthorId;
+    record = data.record;
+    counter = data.counter;
     
+    console.log(data);
 });
 
 client.on("command", async (context) => {
@@ -58,7 +62,7 @@ client.on("command", async (context) => {
         { name: "`/help`", value: "Shows this message" },
         { name: "`/start`", value: "Creates a new channel and sets the counter to 1"},
     )
-        ]})
+        ]}, true);
     }
 
     else if (context.name === "start") {
@@ -93,7 +97,7 @@ client.on("command", async (context) => {
         let ChannelManager = context.server.guild.channels;
 
         let countingChannel = await ChannelManager.create("Counting", {
-            rateLimitPerUser: 5,
+            rateLimitPerUser: 2,
             reason: `${context.user.username} used the start command to create a counting channel`
         });
 
@@ -106,6 +110,10 @@ client.on("command", async (context) => {
         If you do not continue the count for any reason, you will be removed from the channel.\n
         Happy counting! :blush:
         `)
+
+        // save the channel id to the data file
+        data.countingChannelId = countingChannelId;
+        fs.writeFileSync("data.json", JSON.stringify(data));
 
         await context.reply({ embeds: [
             new MessageEmbed()
@@ -141,7 +149,45 @@ client.on("command", async (context) => {
             .setTitle("Counting channel has been deleted.")
         ]}, true)
 
+        // save the channel id to the data file
         countingChannelId = "";
+        data.countingChannelId = countingChannelId;
+        fs.writeFileSync("data.json", JSON.stringify(data));
+
+    }
+
+    else if (context.name === "reset") { // will do soon
+        return;
+        /* 
+        // reset the permissions of all the uesrs for the channel
+        // check if the user is not an exec
+        // let user = await context.server.guild.members.fetch(context.user.id);
+        // let roles = context.server.guild.roles;
+        // let hasExecRole = roles.cache.some(role => role.name === "Executive");
+        // if (!hasExecRole) {
+        //     return;
+        // }
+
+        // if there is no channel, do not do anything
+        if (countingChannelId === "") {
+            context.reply({embeds: [
+                new MessageEmbed()
+                .setTitle("Unable to reset permissions. No counting channel exists.")
+            ]}, true);
+            return;
+        }
+
+        // reset the permissions of all the users for the channel
+        let ChannelManager = context.server.guild.channels;
+        let countingChannel = ChannelManager.resolve(countingChannelId);
+        if (countingChannel.type !== "GUILD_TEXT") {
+            // do nothing
+            return;
+        }
+        let members = countingChannel.members;
+        // get permission overrides
+        let overrides = countingChannel.permissionOverwrites;
+        */
     }
 
     else if (context.name === "clean") {
@@ -152,36 +198,60 @@ client.on("command", async (context) => {
         let ChannelManager = context.server.guild.channels;
         let countingChannels = ChannelManager.cache.filter(channel => channel.name === "counting");
 
-        for (let [countingChannelID, channel] of countingChannels) {
+        if (countingChannels.size === 0) {
+            // no counting channels exist, send reply to user
+            context.reply({embeds: [
+                new MessageEmbed()
+                .setTitle("No counting channels exist.")
+                .setDescription("No channels have been removed.")
+            ]}, true);
+            return;
+        }
+
+        for (let [countingChannelID] of countingChannels) {
             console.log("Deleting channel: "+countingChannelID);
-            await ChannelManager.delete(countingChannelID).catch(
-                (err) => {console.log(err);
-                }
-            );
+            await ChannelManager.delete(countingChannelID);
             console.log("Channel deleted.");
         }
 
-        console.log("Channels gone!");
+        console.log("Channels gone!\nRemoving data...");
+        // remove the data
+        countingChannelId = "";
+        lastMessageAuthorId = "";
+        data.countingChannelId = countingChannelId;
+        data.lastMessageAuthorId = lastMessageAuthorId;
+        fs.writeFileSync("data.json", JSON.stringify(data));
+
+        // reply to the user
+        context.reply({ embeds: [
+            new MessageEmbed()
+            .setTitle("Counting channels have been cleaned.")
+        ]}, true);
     }
 });
 
 client.on("messageCreate", async (message) => {
-    console.log("Current number: "+counter);
     
     // scan the message
     // initially, check if it's in the right channel
     if (message.channel.id !== countingChannelId || message.channel.type !== "GUILD_TEXT") return;
-
+    
     // check if the last message is from the same user
     // if it is, ignore it
     if (message.author.id === lastMessageAuthorId) {
         console.log("Ignoring message from same user.");
         return;
     }
-    else lastMessageAuthorId = message.author.id;
+    
+    lastMessageAuthorId = message.author.id;
+    data.lastMessageAuthorId = lastMessageAuthorId;
+    
+    // write the last message author id to the data file
+    console.log("Current number: "+counter);
+    fs.writeFileSync("data.json", JSON.stringify(data));
 
     // check if it's not the bot
-    if (message.author.bot) return;
+    if (message.author.bot || message.author.id === client.user.id) return;
 
     // check the content
     // if it's not purely a number, stop
@@ -247,13 +317,17 @@ client.on("messageCreate", async (message) => {
 
         counter = 1;
         console.log("The counter has been reset to "+counter);
+        data.record = record;
+        data.counter = counter;
+        fs.writeFileSync("data.json", JSON.stringify(data));
 
         return;
     }
 
     counter++;
     console.log("Number is now "+counter);
-    
+    data.counter = counter;
+    fs.writeFileSync("data.json", JSON.stringify(data));
 })
 
 client.login(process.env.TOKEN);
