@@ -61,6 +61,7 @@ client.on("command", async (context) => {
     .addFields(
         { name: "`/help`", value: "Shows this message" },
         { name: "`/start`", value: "Creates a new channel and sets the counter to 1"},
+        { name: "`/stop`",  value: "Deletes the channel"}
     )
         ]}, true);
     }

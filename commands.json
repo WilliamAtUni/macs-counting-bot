@@ -2,7 +2,12 @@
     "$schema": "https://raw.githubusercontent.com/Romejanic/slasher/master/schema.json",
 
     "help": {
-        "description": "Displays a list of commands that can be used"
+        "description": "Displays a list of commands that can be used",
+        "permissions": {
+            "requires": [
+                "MANAGE_CHANNELS"
+            ]
+        }
     },
 
     "start": {
