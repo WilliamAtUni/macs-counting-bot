@@ -25,6 +25,7 @@ import {
 import { CommandContext, SlasherClient } from 'discord.js-slasher';
 // const dotenv = require('dotenv');
 import { excludeUser, sendExclusionMessage, surpassedRecordMessage } from './exclude';
+import { showHelpEmbed } from './embeds';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -75,25 +76,7 @@ client.on('command', async (context) => {
   let Channel = context.channel;
 
   if (context.name === 'help') {
-    context.reply(
-      {
-        embeds: [
-          new MessageEmbed()
-            .setTitle('Help with roles!')
-            .setDescription('A listing of commands that you can use')
-            .setColor('#FFBCB5')
-            .addFields(
-              { name: '`/help`', value: 'Shows this message' },
-              {
-                name: '`/start`',
-                value: 'Creates a new channel and sets the counter to 1',
-              },
-              { name: '`/stop`', value: 'Deletes the channel' },
-            ),
-        ],
-      },
-      true,
-    );
+    showHelpEmbed(context);
   } else if (context.name === 'start') {
     {
       // threads to be implemented soon
