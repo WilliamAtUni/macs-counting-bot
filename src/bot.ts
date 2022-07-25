@@ -362,7 +362,7 @@ client.on('messageCreate', async (message) => {
     await permissions.create(
       user,
       {
-        VIEW_CHANNEL: false,
+        // VIEW_CHANNEL: false, // potentially make it a configurable setting
         SEND_MESSAGES: false,
       },
       {
