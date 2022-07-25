@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Bot to count in a thread on the MACS Discord Guild",
     "main": "out/bot.js",
+    "private": true,
     "scripts": {
         "build": "tsc",
         "start": "node -r dotenv/config ./out/bot.js",
@@ -19,28 +20,23 @@
         "macs"
     ],
     "author": "WilliamAtUni",
+    "contributors": [
+        "jordanbertasso",
+        "alexclusive",
+        "Romejanic"
+    ],
     "license": "ISC",
     "bugs": {
         "url": "https://github.com/WilliamAtUni/macs-counting-bot.git/issues"
     },
     "homepage": "https://github.com/WilliamAtUni/macs-counting-bot.git#readme",
     "dependencies": {
-        "@types/node": "^18.0.0",
-        "axios": "^0.27.2",
         "discord.js": "^13.8.1",
         "discord.js-slasher": "^0.4.0",
-        "dotenv": "^16.0.1",
-        "jsdom": "^20.0.0",
-        "node-html-parser": "^5.3.3",
-        "node-postgres": "^0.6.2",
-        "pg": "^8.7.3",
-        "postgres-migrations": "^5.3.0",
-        "slasher": "^1.1.0",
-        "ts-node": "10.8.1",
-        "ts-node-dev": "^2.0.0"
+        "dotenv": "^16.0.1"
     },
     "devDependencies": {
-        "@types/jsdom": "^16.2.14",
+        "@types/node": "^18.0.0",
         "typescript": "^4.7.4"
     }
 }
