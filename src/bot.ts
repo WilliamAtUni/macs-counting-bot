@@ -294,21 +294,17 @@ client.on('messageCreate', async (message) => {
 
   // I guess we could start out just by scanning each character of
   // the message and seeing if it's a number
-  // scan messages for zero-width characters and ignore them
-  for (let pos = 0; pos < message.content.length; pos++) {
-    for (let zeroWidthChar of zeroWidthCharacters) {
-        if (message.content[pos] === zeroWidthChar) {
-            console.log('Zero-width character detected. Ignoring message.');
-            return;
-        }
-    }
-
-    if (!numberRegex.test(message.content[pos])) {
-      return; // it's not just a number
-    }
+  // scan messages for zero-width characters and remove them
+  let sanitisedMessageContent = message.content;
+  for (let zeroWidthChar of zeroWidthCharacters) {
+    sanitisedMessageContent = sanitisedMessageContent.replace(zeroWidthChar, '');
   }
 
-  if (message.content !== counter.toString()) {
+  if (!numberRegex.test(sanitisedMessageContent)) {
+      return; // it's not just a number
+  }
+
+  if (sanitisedMessageContent !== counter.toString()) {
     // remove the user from the channel
     let members = message.guild.members;
     let user = members.resolve(message.author);
