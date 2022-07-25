@@ -39,12 +39,14 @@ let countingChannelId = '';
 let lastMessageAuthorId = '';
 let record = 1;
 let counter = 1;
+let usersOut = 0;
 
 let data = {
   countingChannelId: countingChannelId,
   lastMessageAuthorId: lastMessageAuthorId,
   record: record,
   counter: counter,
+  usersOut: usersOut
 };
 
 const client = new SlasherClient({
@@ -78,27 +80,6 @@ client.on('command', async (context) => {
   if (context.name === 'help') {
     showHelpEmbed(context);
   } else if (context.name === 'start') {
-    {
-      // threads to be implemented soon
-      /*
-        if (Channel.type !== "GUILD_TEXT") {
-            context.reply({ embeds: [
-                new MessageEmbed()
-                .setTitle("You can only create a counting thread in a text channel.")
-            ]}, true);
-            return;
-        }
-    
-        let threadManager = Channel.threads;
-    
-        threadManager.create({
-            name: "Counting",
-            reason: `${context.user.username} used the start command to initate a counting thread`,
-            autoArchiveDuration: 60
-        })
-
-        */
-    }
 
     // if a channel already exists, delete it
     if (countingChannelId !== '') {
@@ -133,14 +114,6 @@ client.on('command', async (context) => {
       true,
     );
   } else if (context.name === 'stop') {
-    // check if the user is not an exec
-    // let user = await context.server.guild.members.fetch(context.user.id);
-    // let roles = context.server.guild.roles;
-    // let hasExecRole = roles.cache.some(role => role.name === "Executive");
-    // if (!hasExecRole) {
-    //     return;
-    // }
-
     // if there is no channel, do not do anything
     if (countingChannelId === '') {
       context.reply(
@@ -160,6 +133,7 @@ client.on('command', async (context) => {
     let ChannelManager = context.server.guild.channels;
     let countingChannel = ChannelManager.resolve(countingChannelId);
     await countingChannel.delete();
+    data.usersOut = usersOut = 0;
 
     context.reply(
       {
@@ -254,6 +228,24 @@ client.on('command', async (context) => {
       },
       true,
     );
+  } else if (context.name === 'stats') {
+    if (
+        context.channel.id !== countingChannelId ||
+        context.channel.type !== 'GUILD_TEXT'
+      )
+        return;
+    
+    let channelCreationDate = context.channel.createdAt;
+    await context.reply({
+        embeds: [
+            new MessageEmbed()
+            .setTitle('Counting channel stats')
+            .setDescription('Since the channel\'s creation at '+channelCreationDate+':')
+            .addFields(
+                { name: 'Users out', value: '`'+usersOut+'`'}
+            )
+        ]
+    }, true)
   }
 });
 
@@ -329,7 +321,7 @@ client.on('messageCreate', async (message) => {
   }
 
   counter++;
-  console.log('Number is now ' + counter);
+  console.log('Number incremented to ' + counter);
   data.counter = counter;
   fs.writeFileSync('data.json', JSON.stringify(data));
 });

@@ -18,7 +18,11 @@ export function showHelpEmbed(context: CommandContext) {
                             name: '`/start`',
                             value: 'Creates a new channel and sets the counter to 1',
                         },
-                        { name: '`/stop`', value: 'Deletes the channel' }
+                        { name: '`/stop`', value: 'Deletes the channel' },
+                        { 
+                            name: '`/stats`',
+                            value: 'Shows how many users have been excluded since channel creation'
+                        }
                     ),
             ],
         },

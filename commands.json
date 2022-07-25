@@ -35,5 +35,10 @@
                 "MANAGE_CHANNELS"
             ]
         }
+    },
+
+    "stats": {
+        "description": "Shows how many users have been excluded since channel creation"
     }
+
 }
