@@ -315,6 +315,8 @@ client.on('messageCreate', async (message) => {
     console.log('The counter has been reset to ' + counter);
     data.record = record;
     data.counter = counter;
+    data.usersOut++;
+    usersOut++;
     fs.writeFileSync('data.json', JSON.stringify(data));
 
     return;
