@@ -4,8 +4,6 @@ COPY . .
 
 WORKDIR /
 
-EXPOSE 5432
-
 RUN [ "npm", "ci" ]
 
 RUN [ "npm", "run", "build" ]
