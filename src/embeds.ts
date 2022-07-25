@@ -1,14 +1,8 @@
 import { MessageEmbed } from "discord.js";
-import {
-    CommandContext,
-    SlasherClient
-} from "discord.js-slasher";
+import type { CommandContext } from "discord.js-slasher";
 
 export function showHelpEmbed(context: CommandContext) {
-    context.reply(
-        {
-            embeds: [
-                new MessageEmbed()
+    context.reply(new MessageEmbed()
                     .setTitle('Help with roles!')
                     .setDescription('A listing of commands that you can use')
                     .setColor('#FFBCB5')
@@ -23,9 +17,7 @@ export function showHelpEmbed(context: CommandContext) {
                             name: '`/stats`',
                             value: 'Shows how many users have been excluded since channel creation'
                         }
-                    ),
-            ],
-        },
+        ),
         true
     );
 }

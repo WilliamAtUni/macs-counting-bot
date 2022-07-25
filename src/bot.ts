@@ -1,39 +1,10 @@
-import {
-  Client,
-  Collector,
-  DataResolver,
-  Emoji,
-  Guild,
-  GuildInviteManager,
-  GuildMember,
-  HexColorString,
-  Intents,
-  Message,
-  MessageActionRow,
-  MessageButton,
-  MessageEmbed,
-  MessageManager,
-  MessagePayload,
-  MessageSelectMenu,
-  Modal,
-  ModalActionRowComponent,
-  RoleManager,
-  Snowflake,
-  TextInputComponent,
-  User,
-} from 'discord.js';
-import { CommandContext, SlasherClient } from 'discord.js-slasher';
-// const dotenv = require('dotenv');
+import { MessageEmbed, Intents } from 'discord.js';
+import { SlasherClient } from 'discord.js-slasher';
 import { excludeUser, sendExclusionMessage, surpassedRecordMessage } from './exclude';
 import { showHelpEmbed } from './embeds';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
-
-enum Commands {
-  Help = 'help',
-  Start = 'start',
-}
 
 let countingChannelId = '';
 let lastMessageAuthorId = '';
@@ -60,9 +31,9 @@ const client = new SlasherClient({
   token: process.env.TOKEN,
 });
 
-client.once('ready', async (ready) => {
+client.once('ready', async () => {
   console.log(`${client.user.tag} is ready`);
-  data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+  data = loadData('data.json', data);
 
   countingChannelId = data.countingChannelId;
   lastMessageAuthorId = data.lastMessageAuthorId;
@@ -74,8 +45,6 @@ client.once('ready', async (ready) => {
 
 client.on('command', async (context) => {
   // create a new thread
-  // first, get the channel
-  let Channel = context.channel;
 
   if (context.name === 'help') {
     showHelpEmbed(context);
@@ -109,22 +78,13 @@ client.on('command', async (context) => {
     data.countingChannelId = countingChannelId;
     fs.writeFileSync('data.json', JSON.stringify(data));
 
-    await context.reply(
-      { embeds: [new MessageEmbed().setTitle('Counting Channel created.')] },
-      true,
-    );
+    await context.reply(new MessageEmbed().setTitle('Counting Channel created.'), true);
   } else if (context.name === 'stop') {
     // if there is no channel, do not do anything
     if (countingChannelId === '') {
       context.reply(
-        {
-          embeds: [
-            new MessageEmbed().setTitle(
-              'Unable to delete channel. No counting channel exists.',
-            ),
-          ],
-        },
-        true,
+        new MessageEmbed().setTitle('Unable to delete channel. No counting channel exists.'),
+        true
       );
       return;
     }
@@ -135,14 +95,7 @@ client.on('command', async (context) => {
     await countingChannel.delete();
     data.usersOut = usersOut = 0;
 
-    context.reply(
-      {
-        embeds: [
-          new MessageEmbed().setTitle('Counting channel has been deleted.'),
-        ],
-      },
-      true,
-    );
+    context.reply(new MessageEmbed().setTitle('Counting channel has been deleted.'), true);
 
     // save the channel id to the data file
     countingChannelId = '';
@@ -163,10 +116,9 @@ client.on('command', async (context) => {
 
         // if there is no channel, do not do anything
         if (countingChannelId === "") {
-            context.reply({embeds: [
-                new MessageEmbed()
+            context.reply(new MessageEmbed()
                 .setTitle("Unable to reset permissions. No counting channel exists.")
-            ]}, true);
+            , true);
             return;
         }
 
@@ -192,16 +144,9 @@ client.on('command', async (context) => {
 
     if (countingChannels.size === 0) {
       // no counting channels exist, send reply to user
-      context.reply(
-        {
-          embeds: [
-            new MessageEmbed()
+      context.reply(new MessageEmbed()
               .setTitle('No counting channels exist.')
-              .setDescription('No channels have been removed.'),
-          ],
-        },
-        true,
-      );
+              .setDescription('No channels have been removed.'), true);
       return;
     }
 
@@ -220,14 +165,7 @@ client.on('command', async (context) => {
     fs.writeFileSync('data.json', JSON.stringify(data));
 
     // reply to the user
-    context.reply(
-      {
-        embeds: [
-          new MessageEmbed().setTitle('Counting channels have been cleaned.'),
-        ],
-      },
-      true,
-    );
+    context.reply(new MessageEmbed().setTitle('Counting channels have been cleaned.'), true);
   } else if (context.name === 'stats') {
     if (
         context.channel.id !== countingChannelId ||
@@ -236,16 +174,12 @@ client.on('command', async (context) => {
         return;
     
     let channelCreationDate = context.channel.createdAt;
-    await context.reply({
-        embeds: [
-            new MessageEmbed()
+    await context.reply(new MessageEmbed()
             .setTitle('Counting channel stats')
             .setDescription('Since the channel\'s creation at '+channelCreationDate+':')
             .addFields(
                 { name: 'Users out', value: '`'+usersOut+'`'}
-            )
-        ]
-    }, true)
+            ), true);
   }
 });
 
@@ -328,4 +262,17 @@ client.on('messageCreate', async (message) => {
   fs.writeFileSync('data.json', JSON.stringify(data));
 });
 
+function loadData(file: string, init: object) {
+  // if file exists, read and parse it
+  if(fs.existsSync(file)) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  }
+  // otherwise write the default data to file
+  fs.writeFileSync(file, JSON.stringify(init));
+  return init;
+}
+
+// TODO: delete the 'process.env.TOKEN' part once Slasher bug is fixed
+// see: https://github.com/Romejanic/slasher/issues/11
+// that will stop the token related warnings being printed
 client.login(process.env.TOKEN);
