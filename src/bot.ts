@@ -5,6 +5,7 @@ import {
   Emoji,
   Guild,
   GuildInviteManager,
+  GuildMember,
   HexColorString,
   Intents,
   Message,
@@ -23,6 +24,7 @@ import {
 } from 'discord.js';
 import { CommandContext, SlasherClient } from 'discord.js-slasher';
 // const dotenv = require('dotenv');
+import { excludeUser, sendExclusionMessage, surpassedRecordMessage } from './exclude';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -135,7 +137,7 @@ client.on('command', async (context) => {
     await countingChannel.send(`
         :sparkles: Welcome to the **Counting Channel** :sparkles:\n
         You **must** continue the count from the last mesasge.\n
-        If you do not continue the count for any reason, you will be removed from the channel.\n
+        If you do not continue the count for any reason, you shall be excluded from counting.\n
         Happy counting! :blush:
         `);
 
@@ -327,49 +329,12 @@ client.on('messageCreate', async (message) => {
       record = counter;
       console.log('New record: ' + record);
       // send a message congratulating the user on surpassing the record
-      await message.channel.send({
-        embeds: [
-          new MessageEmbed()
-            .setTitle('New record! `' + record + '`')
-            .setAuthor({
-              name: message.author.username,
-            })
-            .setDescription(`Congratulations, you surpassed the record!`)
-            .addField(
-              'However',
-              'because you failed to continue the count, you will be removed from the channel.',
-            )
-            .setColor(user.displayHexColor),
-        ],
-      });
+      await surpassedRecordMessage(message, user, record);
     }
 
-    await message.channel.send({
-      embeds: [
-        new MessageEmbed()
-          .setAuthor({
-            name: message.author.username,
-          })
-          .setTitle('`OUT`')
-          .setDescription(
-            'This user failed to continue the count and is now banned from the channel.',
-          )
-          .addField('The counter...', 'has been set back to `1`.')
-          .setColor(user.displayHexColor),
-      ],
-    });
+    await sendExclusionMessage(message, user);
 
-    await permissions.create(
-      user,
-      {
-        // VIEW_CHANNEL: false, // potentially make it a configurable setting
-        SEND_MESSAGES: false,
-      },
-      {
-        reason: 'Failed to continue the count',
-        type: 1,
-      },
-    );
+    await excludeUser(permissions, user);
 
     counter = 1;
     console.log('The counter has been reset to ' + counter);
