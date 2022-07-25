@@ -7,7 +7,7 @@
     "scripts": {
         "build": "tsc",
         "start": "node -r dotenv/config ./out/bot.js",
-        "test": "node -r dotenv/config ./out/test.js",
+        "test": "node -r dotenv/config ./out/test.js"
     },
     "repository": {
         "type": "git",
