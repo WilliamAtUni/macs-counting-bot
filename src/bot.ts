@@ -45,7 +45,7 @@ const client = new SlasherClient({
 
 client.once('ready', async () => {
   console.log(`${client.user.tag} is ready`);
-  data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+  data = loadData('data.json', data);
 
   countingChannelId = data.countingChannelId;
   lastMessageAuthorId = data.lastMessageAuthorId;
@@ -281,6 +281,16 @@ client.on('messageCreate', async (message) => {
   data.counter = counter;
   fs.writeFileSync('data.json', JSON.stringify(data));
 });
+
+function loadData(file: string, init: object) {
+  // if file exists, read and parse it
+  if(fs.existsSync(file)) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  }
+  // otherwise write the default data to file
+  fs.writeFileSync(file, JSON.stringify(init));
+  return init;
+}
 
 // TODO: delete the 'process.env.TOKEN' part once Slasher bug is fixed
 // see: https://github.com/Romejanic/slasher/issues/11
