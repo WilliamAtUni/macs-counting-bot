@@ -7,7 +7,7 @@
         "build": "tsc",
         "start": "node -r dotenv/config ./out/bot.js",
         "test": "node -r dotenv/config ./out/test.js",
-        "bruh": "npm build; npm start"
+        "bruh": "npm run build && npm run start"
     },
     "repository": {
         "type": "git",
