@@ -37,14 +37,14 @@ export async function excludeUser(permissions:PermissionOverwriteManager, user:G
     );
 }
 
-export async function sendExclusionMessage(message: Message<boolean>, user:GuildMember) {
+export async function sendExclusionMessage(message: Message<boolean>, user:GuildMember, counter:Number) {
     await message.channel.send({
         embeds: [
             new MessageEmbed()
                 .setAuthor({
                     name: message.author.username,
                 })
-                .setTitle('`OUT`')
+                .setTitle('`OUT` at '+counter)
                 .setDescription(
                     'This user failed to continue the count and is now excluded from the channel.'
                 )

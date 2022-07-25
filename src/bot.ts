@@ -307,7 +307,7 @@ client.on('messageCreate', async (message) => {
       await surpassedRecordMessage(message, user, record);
     }
 
-    await sendExclusionMessage(message, user);
+    await sendExclusionMessage(message, user, counter);
 
     await excludeUser(permissions, user);
 
