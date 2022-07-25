@@ -5,6 +5,7 @@ import {
   Emoji,
   Guild,
   GuildInviteManager,
+  GuildMember,
   HexColorString,
   Intents,
   Message,
@@ -23,6 +24,8 @@ import {
 } from 'discord.js';
 import { CommandContext, SlasherClient } from 'discord.js-slasher';
 // const dotenv = require('dotenv');
+import { excludeUser, sendExclusionMessage, surpassedRecordMessage } from './exclude';
+import { showHelpEmbed } from './embeds';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import fs from 'fs';
@@ -36,12 +39,14 @@ let countingChannelId = '';
 let lastMessageAuthorId = '';
 let record = 1;
 let counter = 1;
+let usersOut = 0;
 
 let data = {
   countingChannelId: countingChannelId,
   lastMessageAuthorId: lastMessageAuthorId,
   record: record,
   counter: counter,
+  usersOut: usersOut
 };
 
 const client = new SlasherClient({
@@ -73,47 +78,8 @@ client.on('command', async (context) => {
   let Channel = context.channel;
 
   if (context.name === 'help') {
-    context.reply(
-      {
-        embeds: [
-          new MessageEmbed()
-            .setTitle('Help with roles!')
-            .setDescription('A listing of commands that you can use')
-            .setColor('#FFBCB5')
-            .addFields(
-              { name: '`/help`', value: 'Shows this message' },
-              {
-                name: '`/start`',
-                value: 'Creates a new channel and sets the counter to 1',
-              },
-              { name: '`/stop`', value: 'Deletes the channel' },
-            ),
-        ],
-      },
-      true,
-    );
+    showHelpEmbed(context);
   } else if (context.name === 'start') {
-    {
-      // threads to be implemented soon
-      /*
-        if (Channel.type !== "GUILD_TEXT") {
-            context.reply({ embeds: [
-                new MessageEmbed()
-                .setTitle("You can only create a counting thread in a text channel.")
-            ]}, true);
-            return;
-        }
-    
-        let threadManager = Channel.threads;
-    
-        threadManager.create({
-            name: "Counting",
-            reason: `${context.user.username} used the start command to initate a counting thread`,
-            autoArchiveDuration: 60
-        })
-
-        */
-    }
 
     // if a channel already exists, delete it
     if (countingChannelId !== '') {
@@ -135,7 +101,7 @@ client.on('command', async (context) => {
     await countingChannel.send(`
         :sparkles: Welcome to the **Counting Channel** :sparkles:\n
         You **must** continue the count from the last mesasge.\n
-        If you do not continue the count for any reason, you will be removed from the channel.\n
+        If you do not continue the count for any reason, you shall be excluded from counting.\n
         Happy counting! :blush:
         `);
 
@@ -148,14 +114,6 @@ client.on('command', async (context) => {
       true,
     );
   } else if (context.name === 'stop') {
-    // check if the user is not an exec
-    // let user = await context.server.guild.members.fetch(context.user.id);
-    // let roles = context.server.guild.roles;
-    // let hasExecRole = roles.cache.some(role => role.name === "Executive");
-    // if (!hasExecRole) {
-    //     return;
-    // }
-
     // if there is no channel, do not do anything
     if (countingChannelId === '') {
       context.reply(
@@ -175,6 +133,7 @@ client.on('command', async (context) => {
     let ChannelManager = context.server.guild.channels;
     let countingChannel = ChannelManager.resolve(countingChannelId);
     await countingChannel.delete();
+    data.usersOut = usersOut = 0;
 
     context.reply(
       {
@@ -269,6 +228,24 @@ client.on('command', async (context) => {
       },
       true,
     );
+  } else if (context.name === 'stats') {
+    if (
+        context.channel.id !== countingChannelId ||
+        context.channel.type !== 'GUILD_TEXT'
+      )
+        return;
+    
+    let channelCreationDate = context.channel.createdAt;
+    await context.reply({
+        embeds: [
+            new MessageEmbed()
+            .setTitle('Counting channel stats')
+            .setDescription('Since the channel\'s creation at '+channelCreationDate+':')
+            .addFields(
+                { name: 'Users out', value: '`'+usersOut+'`'}
+            )
+        ]
+    }, true)
   }
 });
 
@@ -327,49 +304,12 @@ client.on('messageCreate', async (message) => {
       record = counter;
       console.log('New record: ' + record);
       // send a message congratulating the user on surpassing the record
-      await message.channel.send({
-        embeds: [
-          new MessageEmbed()
-            .setTitle('New record! `' + record + '`')
-            .setAuthor({
-              name: message.author.username,
-            })
-            .setDescription(`Congratulations, you surpassed the record!`)
-            .addField(
-              'However',
-              'because you failed to continue the count, you will be removed from the channel.',
-            )
-            .setColor(user.displayHexColor),
-        ],
-      });
+      await surpassedRecordMessage(message, user, record);
     }
 
-    await message.channel.send({
-      embeds: [
-        new MessageEmbed()
-          .setAuthor({
-            name: message.author.username,
-          })
-          .setTitle('`OUT`')
-          .setDescription(
-            'This user failed to continue the count and is now banned from the channel.',
-          )
-          .addField('The counter...', 'has been set back to `1`.')
-          .setColor(user.displayHexColor),
-      ],
-    });
+    await sendExclusionMessage(message, user, counter);
 
-    await permissions.create(
-      user,
-      {
-        // VIEW_CHANNEL: false, // potentially make it a configurable setting
-        SEND_MESSAGES: false,
-      },
-      {
-        reason: 'Failed to continue the count',
-        type: 1,
-      },
-    );
+    await excludeUser(permissions, user);
 
     counter = 1;
     console.log('The counter has been reset to ' + counter);
@@ -381,7 +321,7 @@ client.on('messageCreate', async (message) => {
   }
 
   counter++;
-  console.log('Number is now ' + counter);
+  console.log('Number incremented to ' + counter);
   data.counter = counter;
   fs.writeFileSync('data.json', JSON.stringify(data));
 });

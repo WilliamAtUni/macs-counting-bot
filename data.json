@@ -2,5 +2,6 @@
     "countingChannelId": "",
     "lastMessageAuthorId": "",
     "record": 1,
-    "counter": 1
+    "counter": 1,
+    "usersOut": 0
 }
