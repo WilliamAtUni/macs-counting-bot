@@ -241,6 +241,9 @@ client.on("messageCreate", async (message) => {
     return; // it's not just a number
   }
 
+  // make it so that every word is scanned and if, say, the first word matches the counter,
+  // it must progress to the next number or the user is excluded
+
   if (sanitisedMessageContent !== counter.toString()) {
     // remove the user from the channel
     let members = message.guild.members;
