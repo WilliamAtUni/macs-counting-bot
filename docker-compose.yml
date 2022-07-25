@@ -2,4 +2,6 @@ version: "3.9"
 services:
   bot:
     build: .
-    restart: always
+    restart: unless-stopped
+    environment:
+      - TOKEN=$TOKEN
