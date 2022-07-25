@@ -350,7 +350,7 @@ client.on('messageCreate', async (message) => {
           .setAuthor({
             name: message.author.username,
           })
-          .setTitle('`OUT`')
+          .setTitle('`OUT` at ' + counter)
           .setDescription(
             'This user failed to continue the count and is now banned from the channel.',
           )
