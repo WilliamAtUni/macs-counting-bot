@@ -290,7 +290,7 @@ client.on('messageCreate', async (message) => {
   // check the content
   // if it's not purely a number, stop
   let isNumber: boolean = false;
-  let numberRegex = /\d+/;
+  let numberRegex = /^\d+$/;
 
   // I guess we could start out just by scanning each character of
   // the message and seeing if it's a number
