@@ -348,4 +348,7 @@ client.on('messageCreate', async (message) => {
   fs.writeFileSync('data.json', JSON.stringify(data));
 });
 
+// TODO: delete the 'process.env.TOKEN' part once Slasher bug is fixed
+// see: https://github.com/Romejanic/slasher/issues/11
+// that will stop the token related warnings being printed
 client.login(process.env.TOKEN);
