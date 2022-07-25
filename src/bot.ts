@@ -296,7 +296,7 @@ client.on('messageCreate', async (message) => {
   // the message and seeing if it's a number
   // scan messages for zero-width characters and ignore them
   for (let pos = 0; pos < message.content.length; pos++) {
-    for (let zeroWidthChar in zeroWidthCharacters) {
+    for (let zeroWidthChar of zeroWidthCharacters) {
         if (message.content[pos] === zeroWidthChar) {
             console.log('Zero-width character detected. Ignoring message.');
             return;
