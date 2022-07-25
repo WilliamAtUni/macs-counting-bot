@@ -11,18 +11,6 @@ let lastMessageAuthorId = '';
 let record = 1;
 let counter = 1;
 let usersOut = 0;
-let zeroWidthCharacters = [
-    '\u200B',
-    '\u200C',
-    '\u200D',
-    '\u200E',
-    '\u202A',
-    '\u202C',
-    '\u202D',
-    '\u2062',
-    '\u2063',
-    '\uFEFF',
-]
 
 let data = {
   countingChannelId: countingChannelId,
@@ -224,25 +212,17 @@ client.on('messageCreate', async (message) => {
   // check the content
   // if it's not purely a number, stop
   let isNumber: boolean = false;
-  let numberRegex = /\d+/;
+  let numberRegex = /^\d+$/;
 
-  // I guess we could start out just by scanning each character of
-  // the message and seeing if it's a number
-  // scan messages for zero-width characters and ignore them
-  for (let pos = 0; pos < message.content.length; pos++) {
-    for (let zeroWidthChar in zeroWidthCharacters) {
-        if (message.content[pos] === zeroWidthChar) {
-            console.log('Zero-width character detected. Ignoring message.');
-            return;
-        }
-    }
+  // Just remove all non ascii chars
+  let sanitisedMessageContent = message.content.replace(/[^\x20-\x7F]/gu, ""); 
 
-    if (!numberRegex.test(message.content[pos])) {
+
+  if (!numberRegex.test(sanitisedMessageContent)) {
       return; // it's not just a number
-    }
   }
 
-  if (message.content !== counter.toString()) {
+  if (sanitisedMessageContent !== counter.toString()) {
     // remove the user from the channel
     let members = message.guild.members;
     let user = members.resolve(message.author);
